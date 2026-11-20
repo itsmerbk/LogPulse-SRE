@@ -19,8 +19,8 @@ flowchart LR
 ## Quickstart
 
 ~~~bash
-git clone https://github.com/itsmerbk/logpulse-sre.git
-cd logpulse-sre
+git clone https://github.com/itsmerbk/LogPulse-SRE.git
+cd LogPulse-SRE
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

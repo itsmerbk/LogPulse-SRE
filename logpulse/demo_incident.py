@@ -19,7 +19,6 @@ def build_simulated_service_repo(base_dir: Path) -> Path:
     subprocess.run(["git", "config", "user.name", "Bharath Kumar"], cwd=repo, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "itsmerbk@users.noreply.github.com"], cwd=repo, check=True, capture_output=True)
 
-    # Commit 1: Clean baseline code
     (repo / "payment_router.py").write_text(
         "def settle_upi_transfer(tx_id: str, metadata: dict) -> str:\n"
         "    bank_code = metadata.get('bank_code', 'DEFAULT')\n"
@@ -28,10 +27,8 @@ def build_simulated_service_repo(base_dir: Path) -> Path:
     subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
     subprocess.run(["git", "commit", "-m", "feat: add initial UPI transfer settlement router"], cwd=repo, check=True, capture_output=True)
 
-    # Commit 2: Faulty deploy removing defensive .get() and raising KeyError on missing 'routing_vpa'
     (repo / "payment_router.py").write_text(
         "def settle_upi_transfer(tx_id: str, metadata: dict) -> str:\n"
-        "    # Strict VPA lookup introduced in v2.4 deploy\n"
         "    vpa = metadata['routing_vpa']\n"
         "    if not vpa:\n"
         "        raise KeyError('Missing routing_vpa in settlement payload')\n"
@@ -40,7 +37,6 @@ def build_simulated_service_repo(base_dir: Path) -> Path:
     subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
     subprocess.run(["git", "commit", "-m", "refactor: enforce strict routing_vpa lookup in settle_upi_transfer"], cwd=repo, check=True, capture_output=True)
 
-    # Commit 3: Unrelated README update
     (repo / "README.md").write_text("# Payments Gateway Service\n")
     subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
     subprocess.run(["git", "commit", "-m", "docs: update service deployment notes"], cwd=repo, check=True, capture_output=True)
@@ -53,13 +49,11 @@ def main() -> None:
         repo_path = build_simulated_service_repo(Path(tmp))
         engine = LogAnomalyEngine(bucket_size=30, z_threshold=3.0)
 
-        # 1. Stream 150 healthy baseline logs (5 buckets of 30 logs)
         for i in range(150):
             engine.ingest_line(
                 f"2026-11-20T14:10:{i%60:02d}Z INFO settle_upi_transfer() completed tx=550e8400-e29b-41d4-a716-44665544{i:04d} from 10.24.1.{i%250} in {11 + (i%7)}ms"
             )
 
-        # 2. Inject sudden deployment regression spike (28 errors in current bucket)
         for j in range(28):
             engine.ingest_line(
                 f"2026-11-20T14:15:{j:02d}Z ERROR payment_router.py:4 KeyError in settle_upi_transfer() for tx=991e8400-e29b-41d4-a716-44665544{j:04d} ip=10.24.9.{j+10}"

@@ -40,7 +40,6 @@ def normalize_log_line(raw_line: str) -> ParsedLog:
     for pattern, token in MASK_RULES:
         masked = pattern.sub(token, masked)
 
-    # Strip leading timestamp/level prefix so identical errors share one template ID
     core_template = re.sub(r"^(?:<TS>\s*)?(?:\[?(?:INFO\vert{}WARN\vert{}ERROR\vert{}DEBUG)\]?\s*:?\s*)", "", masked).strip()
     template_id = hashlib.sha1(core_template.encode("utf-8")).hexdigest()[:10]
 

@@ -40,7 +40,6 @@ def rank_suspect_commits(repo_path: str | Path, incident: IncidentAlert, max_com
         if len(header) < 3:
             continue
         commit_hash, author, subject = header[0][:8], header[1], header[2]
-        diff_body = "\n".join(lines[1:])
 
         changed_files: list[str] = []
         added_lines: list[str] = []
@@ -61,7 +60,6 @@ def rank_suspect_commits(repo_path: str | Path, incident: IncidentAlert, max_com
             if sym in added_corpus or sym in subject
         ]
 
-        # Score: file path overlap (50 pts), added symbol/exception overlap (40 pts), recency weight (10 pts)
         recency_bonus = max(0.0, 10.0 - (idx * 2.0))
         score = (len(matched_files) * 50.0) + (len(matched_symbols) * 25.0) + (recency_bonus if (matched_files or matched_symbols) else 0.0)
         confidence = min(99.5, round(score, 1))
